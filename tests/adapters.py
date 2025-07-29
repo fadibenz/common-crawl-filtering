@@ -4,6 +4,7 @@ import os
 from typing import Any
 
 from data_filtering.filtering_utilities.extract_text import extract_text
+from data_filtering.filtering_utilities.language_identification import language_identification
 
 
 def run_extract_text_from_html_bytes(html_bytes: bytes) -> str | None:
@@ -11,7 +12,7 @@ def run_extract_text_from_html_bytes(html_bytes: bytes) -> str | None:
 
 
 def run_identify_language(text: str) -> tuple[Any, float]:
-    raise NotImplementedError
+    return language_identification(text)
 
 
 def run_mask_emails(text: str) -> tuple[str, int]:
