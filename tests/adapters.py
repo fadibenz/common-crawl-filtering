@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from typing import Any
-
+import fasttext
 from data_filtering.filtering_utilities.extract_text import extract_text
 from data_filtering.filtering_utilities.language_identification import language_identification
 
@@ -12,7 +12,8 @@ def run_extract_text_from_html_bytes(html_bytes: bytes) -> str | None:
 
 
 def run_identify_language(text: str) -> tuple[Any, float]:
-    return language_identification(text)
+    model = fasttext.load_model("classifier_models/fasttext_language_ID.bin")
+    return language_identification(text, model)
 
 
 def run_mask_emails(text: str) -> tuple[str, int]:
