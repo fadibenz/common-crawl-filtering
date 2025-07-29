@@ -8,6 +8,7 @@ import fasttext
 from fastwarc.warc import ArchiveIterator, WarcRecordType
 from fastwarc.stream_io import GZipStream, FileStream
 
+from data_filtering.filtering_utilities.harmful_content import classify_harmful_content
 from data_filtering.filtering_utilities.mask_pii import mask_pii
 from data_filtering.utils import setup_logging
 from data_filtering.filtering_utilities.extract_text import extract_text
@@ -38,6 +39,9 @@ if __name__ == "__main__":
     except ValueError as e:
         logging.error(f"Failed to load fastText model. Make sure the path is correct. Error: {e}")
         exit(1)
+
+    nsfw_model = fasttext.load_model("classifier_models/jigsaw_fasttext_bigrams_nsfw_final.bin")
+    hatespeech_model = fasttext.load_model("classifier_models/jigsaw_fasttext_bigrams_hatespeech_final.bin")
 
     input_file_path = Path(args.input_file)
     if input_file_path.suffix == ".gz" and input_file_path.with_suffix("").suffix == ".warc":
@@ -72,21 +76,25 @@ if __name__ == "__main__":
                 extracted_text = normalize_whitespace(extracted_text)
                 if extracted_text.strip():
                     lang, confidence = language_identification(extracted_text, lang_model)
+                    label_nsfw, score_nsfw = classify_harmful_content(extracted_text, nsfw_model)
+                    label_hate, score_hate = classify_harmful_content(extracted_text, hatespeech_model)
+
                     masked_extracted_text, counts = mask_pii(extracted_text)
                     output_data = {
                         "text": masked_extracted_text,
                         "lang": lang,
                         "confidence": round(confidence, 4),
                         "url": record.headers.get('WARC-Target-URI'),
-                        "pii_counts": counts
+                        "pii_counts": counts,
                     }
-                    if args.filter_lang:
-                        if lang == args.lang and confidence >= args.confidence:
+                    if (label_hate == "non-toxic" and score_hate >= 0.9) and (label_nsfw == "non-nsfw" and score_nsfw >= 0.9):
+                        if args.filter_lang:
+                            if lang == args.lang and confidence >= args.confidence:
+                                f.write(json.dumps(output_data, ensure_ascii=False) + '\n')
+                                kept_records += 1
+                        else:
                             f.write(json.dumps(output_data, ensure_ascii=False) + '\n')
                             kept_records += 1
-                    else:
-                        f.write(json.dumps(output_data, ensure_ascii=False) + '\n')
-                        kept_records += 1
 
             except Exception as e:
                 logging.warning(f"Failed to process record #{total_records}: {e}")
