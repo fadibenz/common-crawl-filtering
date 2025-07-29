@@ -4,6 +4,7 @@ import os
 from typing import Any
 import fasttext
 from data_filtering.filtering_utilities.extract_text import extract_text
+from data_filtering.filtering_utilities.harmful_content import classify_harmful_content
 from data_filtering.filtering_utilities.language_identification import language_identification
 from data_filtering.filtering_utilities.mask_pii import mask_emails, mask_phone_numbers, mask_ip_address
 
@@ -26,12 +27,12 @@ def run_mask_ips(text: str) -> tuple[str, int]:
     return mask_ip_address(text)
 
 def run_classify_nsfw(text: str) -> tuple[Any, float]:
-    raise NotImplementedError
-
+    model = fasttext.load_model("classifier_models/jigsaw_fasttext_bigrams_nsfw_final.bin")
+    return classify_harmful_content(text, model)
 
 def run_classify_toxic_speech(text: str) -> tuple[Any, float]:
-    raise NotImplementedError
-
+    model = fasttext.load_model("classifier_models/jigsaw_fasttext_bigrams_hatespeech_final.bin")
+    return classify_harmful_content(text, model)
 
 def run_classify_quality(text: str) -> tuple[Any, float]:
     raise NotImplementedError
