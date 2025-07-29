@@ -4,6 +4,7 @@ import os
 from typing import Any
 import fasttext
 from data_filtering.filtering_utilities.extract_text import extract_text
+from data_filtering.filtering_utilities.gopher_quality_filters import gopher_quality_filters
 from data_filtering.filtering_utilities.harmful_content import classify_harmful_content
 from data_filtering.filtering_utilities.language_identification import language_identification
 from data_filtering.filtering_utilities.mask_pii import mask_emails, mask_phone_numbers, mask_ip_address
@@ -39,7 +40,7 @@ def run_classify_quality(text: str) -> tuple[Any, float]:
 
 
 def run_gopher_quality_filter(text: str) -> bool:
-    raise NotImplementedError
+    return gopher_quality_filters(text)
 
 
 def run_exact_line_deduplication(
