@@ -94,3 +94,47 @@ I added a `normalize_whitespace()` utility that collapses all excessive spacing 
 
 I went on to change the extraction function to include the `main_content=True` flag, this lead to cleaner extractions, and it also increased 
 the number of english documents kept to 25.25% (6747 out of 27,824), I will stick with it preliminary.
+
+### Personal identifiable information (PII) Masking
+
+After language filtering and normalization, I added a data-cleaning step to detect and mask personally identifiable information (PII),
+such as emails, phone numbers, and IP addresses. 
+
+I implemented regex-based masking for three key types of PII:
+
+- **Emails**: `[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`
+- **Phone numbers**: Patterns such as `(283) 182 3829` or `+1-800-555-1234`, this was tricky as there are a lot of variations, I focused on american numbers for now.
+- **IPv4 addresses**
+
+Each PII match is replaced with a descriptive placeholder, e.g., `|||EMAIL_ADDRESS|||`, to maintain formatting without leaking sensitive data.
+
+A major design decision was to **track the number of substitutions** per document. 
+This count is stored alongside the text in the output `.jsonl`, like so:
+
+```json
+{
+  "text": "Please contact us at |||EMAIL_ADDRESS||| or visit our office.",
+  "lang": "en",
+  "confidence": 0.9841,
+  "url": "http://example.com",
+  "pii_counts": {
+    "email": 1,
+    "phone_numbers": 0,
+    "ip_address": 0,
+    "pii_total": 1
+  }
+}
+```
+
+To ensure correctness and performance, I compile all regexes ahead of time and use `re.subn()` 
+to get both the masked text and the number of matches. 
+
+
+PII masking is executed after language identification and whitespace normalization, ensuring the cleaner text is passed downstream. 
+For now, this regex-based approach offers a reliable baseline. In the future, I may extend the system to mask names and addresses using NER models like spaCy or Stanza, 
+especially if I observe leakage in real examples.
+
+> + Early results show that while most documents have zero or one PII element, a small but non-negligible number (mostly from contact forms or review sections) 
+> contain multiple.
+> + There were some false positives, especially with phone numbers were some long numbers were mistaken for phone numbers.
+
