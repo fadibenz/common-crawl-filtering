@@ -5,6 +5,7 @@ from typing import Any
 import fasttext
 from data_filtering.filtering_utilities.extract_text import extract_text
 from data_filtering.filtering_utilities.language_identification import language_identification
+from data_filtering.filtering_utilities.mask_pii import mask_emails, mask_phone_numbers, mask_ip_address
 
 
 def run_extract_text_from_html_bytes(html_bytes: bytes) -> str | None:
@@ -15,18 +16,14 @@ def run_identify_language(text: str) -> tuple[Any, float]:
     model = fasttext.load_model("classifier_models/fasttext_language_ID.bin")
     return language_identification(text, model)
 
-
 def run_mask_emails(text: str) -> tuple[str, int]:
-    raise NotImplementedError
-
+    return mask_emails(text)
 
 def run_mask_phone_numbers(text: str) -> tuple[str, int]:
-    raise NotImplementedError
-
+    return mask_phone_numbers(text)
 
 def run_mask_ips(text: str) -> tuple[str, int]:
-    raise NotImplementedError
-
+    return mask_ip_address(text)
 
 def run_classify_nsfw(text: str) -> tuple[Any, float]:
     raise NotImplementedError
