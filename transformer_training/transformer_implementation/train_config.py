@@ -15,7 +15,6 @@ class PathsConfig:
     valid_bin: Path = MISSING
     model_output: Path = MISSING
 
-
 @dataclass
 class ModelConfig:
     vocab_size: int = 50257
@@ -25,7 +24,6 @@ class ModelConfig:
     num_layers: int = 12
     num_heads: int = 12
     rope_theta: float | None = 10000.0
-
 
 @dataclass
 class TrainingConfig:
@@ -56,7 +54,6 @@ class Config:
     paths: PathsConfig = field(default_factory=PathsConfig)
     model: ModelConfig = field(default_factory=ModelConfig)
     training: TrainingConfig = field(default_factory=TrainingConfig)
-
 
 def register_configs():
     OmegaConf.register_new_resolver("eval", eval)
