@@ -60,3 +60,37 @@ will come after this raw extraction phase.
 > + There are a lot of languages in the full file, will be interesting to do some language identification.
 
 ### Language Identification
+
+After the raw extraction, I switched to JSONL output to preserve document structure along with metadata, instead of 
+separating documents with special tokens.  
+Each record now contains:
+
+```json
+{
+  "text": "...",
+  "lang": "en",
+  "confidence": 0.9984,
+  "url": "http://some.site/page"
+}
+```
+For language ID, I used fastText’s lid.176.bin model via fasttext.
+The classifier outputs the most likely language along with a confidence score.
+I exposed --lang, --confidence, and --filter_lang as CLI flags so I could choose to either keep all documents or only a subset.
+
+As mentioned above, a lot of pages have trailing or leading newlines, large indentations, or blank padding across dozens of lines.
+
+I added a `normalize_whitespace()` utility that collapses all excessive spacing and strips trailing/leading junk.
+
+> Results:
+> + Inspecting some random samples shows that the model did a very descent job in language identification; I only noticed one mistake in which a text in Spanish was considered 
+> French.
+> + One important observation was that it sometimes allocated very low confidence to text that was obviously english, specially in cases where it was math stuff.
+> + Also, some text with obvious low quality content was given low confidence, suggesting that setting a good threshold would be the first quality filter we might use.
+> + In high stakes scenarios, I believe doing ensembelling or deriving the threshold for a ROC curve would be necessary. 
+> + I will stick with 0.8 threshold for now. Filtering for english in one WARC sample, only 15.8% (4401 out of 2784) were kept
+> as english documents. Looking at random samples showed no signs of false positives.
+
+#### Important note:
+
+I went on to change the extraction function to include the `main_content=True` flag, this lead to cleaner extractions, and it also increased 
+the number of english documents kept to 25.25% (6747 out of 27,824), I will stick with it preliminary.
