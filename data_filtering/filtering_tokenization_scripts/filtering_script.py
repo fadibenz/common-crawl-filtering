@@ -8,6 +8,7 @@ import fasttext
 from fastwarc.warc import ArchiveIterator, WarcRecordType
 from fastwarc.stream_io import GZipStream, FileStream
 
+from data_filtering.filtering_utilities.mask_pii import mask_pii
 from data_filtering.utils import setup_logging
 from data_filtering.filtering_utilities.extract_text import extract_text
 from data_filtering.filtering_utilities.language_identification import language_identification
@@ -71,11 +72,13 @@ if __name__ == "__main__":
                 extracted_text = normalize_whitespace(extracted_text)
                 if extracted_text.strip():
                     lang, confidence = language_identification(extracted_text, lang_model)
+                    masked_extracted_text, counts = mask_pii(extracted_text)
                     output_data = {
-                        "text": extracted_text,
+                        "text": masked_extracted_text,
                         "lang": lang,
                         "confidence": round(confidence, 4),
-                        "url": record.headers.get('WARC-Target-URI')
+                        "url": record.headers.get('WARC-Target-URI'),
+                        "pii_counts": counts
                     }
                     if args.filter_lang:
                         if lang == args.lang and confidence >= args.confidence:
