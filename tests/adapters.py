@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from typing import Any
 import fasttext
+
+from data_filtering.filtering_utilities.exact_line_deduplication import exact_line_deduplication
 from data_filtering.filtering_utilities.extract_text import extract_text
 from data_filtering.filtering_utilities.gopher_quality_filters import gopher_quality_filters
 from data_filtering.filtering_utilities.harmful_content import classify_harmful_content
@@ -46,7 +48,7 @@ def run_gopher_quality_filter(text: str) -> bool:
 def run_exact_line_deduplication(
     input_files: list[os.PathLike], output_directory: os.PathLike
 ):
-    raise NotImplementedError
+    return exact_line_deduplication(input_files, output_directory)
 
 
 def run_minhash_deduplication(
