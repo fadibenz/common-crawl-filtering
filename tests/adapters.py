@@ -10,6 +10,7 @@ from data_filtering.filtering_utilities.gopher_quality_filters import gopher_qua
 from data_filtering.filtering_utilities.harmful_content import classify_harmful_content
 from data_filtering.filtering_utilities.language_identification import language_identification
 from data_filtering.filtering_utilities.mask_pii import mask_emails, mask_phone_numbers, mask_ip_address
+from data_filtering.filtering_utilities.minhash_deduplication import minhash_deduplication
 
 
 def run_extract_text_from_html_bytes(html_bytes: bytes) -> str | None:
@@ -59,4 +60,4 @@ def run_minhash_deduplication(
     jaccard_threshold: float,
     output_directory: os.PathLike,
 ):
-    raise NotImplementedError
+    return minhash_deduplication(input_files, num_hashes, num_bands, ngrams, jaccard_threshold, output_directory)
