@@ -138,3 +138,37 @@ especially if I observe leakage in real examples.
 > contain multiple.
 > + There were some false positives, especially with phone numbers were some long numbers were mistaken for phone numbers.
 
+### Harmful content: 
+
+Similar to before, I used two fasttext models to detect for NSFW content and 
+hate speech content. 
+
+This is important because looking at the raw text it included many 
+documents with very explicit content. 
+
+Looking at some classified samples, there were no false positives 
+for NSFW or toxic content, at least for this WARC sample, but 
+there was a non-negligible number of false negatives, which is very harmful.
+
+Fortunately, it's very rare to find documents that were false negatives for both toxicity and NSFW.
+Still, to allow for robust filtering, I set a very high threshold of 0.95 for both non-NSFW and non-toxic 
+classes. 
+
+Other quality filters will filter out this content even further. 
+
+> Applying this filter lead to 23.98% of documents being kept down from 25.25%
+
+### Quality Rules: 
+
+I started by implementing simple quality filters taken from the Gopher 
+paper, they include several criteria based on document length, word length, symbol-to-word ratios, 
+and the presence of certain English stop words.
+
+Specifically, I removed documents that:
+
++ Contain less than 50 or more than 100,000 words.  
++ Have a mean word length outside the range of 3 to 10 characters.  
++ Have more than 30% of lines ending with an ellipsis (“...”).
++ Contain less than 80% of words with at least one alphabetic character.
+
+> Applying this filter lead to 9.86%% of documents being kept, down from 23.98%.
