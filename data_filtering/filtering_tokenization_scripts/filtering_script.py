@@ -14,6 +14,7 @@ from data_filtering.utils import setup_logging
 from data_filtering.filtering_utilities.extract_text import extract_text
 from data_filtering.filtering_utilities.language_identification import language_identification
 from data_filtering.filtering_utilities.normalizing_text import normalize_whitespace
+from data_filtering.filtering_utilities.gopher_quality_filters import gopher_quality_filters
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Extract text from .warc.gz HTML responses.")
@@ -21,7 +22,6 @@ def parse_args():
     parser.add_argument("--input_file", required=True, type=str, help="Path to the WARC file")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite output file if it exists")
 
-    parser.add_argument("--langid_model", required=True, type=str, help="Path to fastText model")
     parser.add_argument("--filter_lang", action="store_true", help="Filter records based on language")
     parser.add_argument("--lang", default="en", type=str, help="Language to filter for (e.g., 'en').")
     parser.add_argument("--confidence", default=0.90, type=float, help="Minimum confidence score to keep a document.")
@@ -33,13 +33,9 @@ if __name__ == "__main__":
     setup_logging()
     args = parse_args()
 
-    logging.info(f"Loading fastText model from: {args.langid_model}")
-    try:
-        lang_model = fasttext.load_model(args.langid_model)
-    except ValueError as e:
-        logging.error(f"Failed to load fastText model. Make sure the path is correct. Error: {e}")
-        exit(1)
+    logging.info(f"Loading fastText models")
 
+    lang_model = fasttext.load_model("classifier_models/fasttext_language_ID.bin")
     nsfw_model = fasttext.load_model("classifier_models/jigsaw_fasttext_bigrams_nsfw_final.bin")
     hatespeech_model = fasttext.load_model("classifier_models/jigsaw_fasttext_bigrams_hatespeech_final.bin")
 
@@ -63,7 +59,7 @@ if __name__ == "__main__":
     logging.info(f"Processing WARC file: {input_file_path}")
 
     stream = GZipStream(FileStream(str(input_file_path), "rb"))
-    with open(output_file, mode, encoding="utf-8", errors="replace") as f:
+    with (open(output_file, mode, encoding="utf-8", errors="replace") as f):
         for record in ArchiveIterator(stream, record_types=WarcRecordType.response):
             total_records +=1
 
@@ -74,27 +70,42 @@ if __name__ == "__main__":
                 record_bytes = record.reader.read()
                 extracted_text = extract_text(record_bytes)
                 extracted_text = normalize_whitespace(extracted_text)
-                if extracted_text.strip():
-                    lang, confidence = language_identification(extracted_text, lang_model)
-                    label_nsfw, score_nsfw = classify_harmful_content(extracted_text, nsfw_model)
-                    label_hate, score_hate = classify_harmful_content(extracted_text, hatespeech_model)
 
-                    masked_extracted_text, counts = mask_pii(extracted_text)
-                    output_data = {
-                        "text": masked_extracted_text,
-                        "lang": lang,
-                        "confidence": round(confidence, 4),
-                        "url": record.headers.get('WARC-Target-URI'),
-                        "pii_counts": counts,
-                    }
-                    if (label_hate == "non-toxic" and score_hate >= 0.9) and (label_nsfw == "non-nsfw" and score_nsfw >= 0.9):
-                        if args.filter_lang:
-                            if lang == args.lang and confidence >= args.confidence:
-                                f.write(json.dumps(output_data, ensure_ascii=False) + '\n')
-                                kept_records += 1
-                        else:
-                            f.write(json.dumps(output_data, ensure_ascii=False) + '\n')
-                            kept_records += 1
+                if not extracted_text.strip():
+                    continue
+
+                # Language check
+                lang, confidence = language_identification(extracted_text, lang_model)
+                if args.filter_lang and (lang != args.lang or confidence < args.confidence):
+                    continue
+
+                # Quality check
+                if not gopher_quality_filters(extracted_text):
+                    continue
+
+                # Harmful content
+                label_nsfw, score_nsfw = classify_harmful_content(extracted_text, nsfw_model)
+                if not (label_nsfw == "non-nsfw" and score_nsfw >= 0.95):
+                    continue
+
+                label_hate, score_hate = classify_harmful_content(extracted_text, hatespeech_model)
+                if not (label_hate == "non-toxic" and score_hate >= 0.95):
+                    continue
+
+                # PII masking
+                masked_extracted_text, counts = mask_pii(extracted_text)
+
+                # Save the record
+                output_data = {
+                    "text": masked_extracted_text,
+                    "lang": lang,
+                    "confidence": round(confidence, 4),
+                    "url": record.headers.get('WARC-Target-URI'),
+                    "pii_counts": counts,
+                }
+
+                f.write(json.dumps(output_data, ensure_ascii=False) + '\n')
+                kept_records += 1
 
             except Exception as e:
                 logging.warning(f"Failed to process record #{total_records}: {e}")
