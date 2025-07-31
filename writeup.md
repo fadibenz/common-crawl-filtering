@@ -2,6 +2,11 @@
 
 ## Filtering Common Crawl (CC):
 
+### Design Philosophy
+
+The goal of this pipeline is to isolate high-quality, English, non-redundant, and safe documents from raw Common Crawl, preserving only what’s worth training on. Each filter is modular, well-logged, and reversible, enabling future iterations and ablations.
+
+
 ### Inspecting CC:
 
 I downloaded sample files as WARC and WET to get an idea of what a random 
@@ -172,3 +177,70 @@ Specifically, I removed documents that:
 + Contain less than 80% of words with at least one alphabetic character.
 
 > Applying this filter lead to 9.86%% of documents being kept, down from 23.98%.
+
+Great work so far — this is shaping up to be a rigorous and thoughtful writeup. Let’s enhance it with a clean, high-signal section for **Deduplication**, maintaining your technical tone and clarity. I’ll also tie it smoothly into your existing structure.
+
+---
+
+### Deduplication
+To avoid duplicate content (very common in CC),
+I aggressively filtered to avoid model overfitting or memorizing redundant patterns. 
+I implemented two levels of deduplication:
+
+#### 1. Exact Line Deduplication
+
+First, I removed exact duplicate lines across all documents. This is a low-cost but effective baseline.
+
+**Approach**:
+
+* Each line is SHA256 hashed and counted.
+* Lines appearing more than once across the entire dataset are discarded.
+* Only documents containing **unique lines** are retained in the output directory.
+
+This step removes low-effort spam, template-heavy pages, or copy-pasted boilerplate content that escapes HTML filtering.
+
+
+#### 2. Fuzzy Document Deduplication (MinHash + LSH)
+
+For near-duplicate detection, I implemented a full MinHash + Locality-Sensitive Hashing (LSH) pipeline.
+
+**Pipeline Overview**:
+
+1. **Normalize & Tokenize**:
+   * Lowercase, remove accents and punctuation, collapse whitespace.
+   * Convert to word-based n-grams.
+2. **MinHash Signature**:
+   * For each document, compute a signature using multiple MurmurHash functions (via `mmh3`) over the n-grams.
+3. **Banding (LSH)**:
+   * Split signature into bands and group documents by identical band chunks.
+   * Pairs within a band are considered **candidates**.
+4. **Jaccard Filtering**:
+   * Compute true Jaccard similarity on n-gram sets.
+   * Confirm pairs with similarity ≥ `threshold` (e.g., 0.85).
+5. **Clustering & Filtering**:
+   * Build connected clusters of near-duplicate documents (Using DFS).
+   * From each cluster, retain a random representative and discard the rest.
+
+**Design Choices**:
+* Used 100 hash functions, 20 bands (5 hashes per band), and 5-grams.
+* Jaccard similarity threshold of 0.85 offered good precision-recall balance.
+
+**Output**:
+Only a single document from each near-duplicate group is retained, ensuring reduced redundancy while preserving diversity.
+
+> **Note on my understanding:**
+>
+>We want to know if documents are very similar,
+> to do so, we construct n-grams from each document (we can control granularity), 
+> An intuitive way to see if they are similar is to calculate the jaccard index between the n-gram sets. 
+> The thing is we would need to compare each document to all other documents, $O(n^2)$ complexity, not very god. 
+> A smart way to do this is to calculate a MinHash for each n-gram set, we set a seed for determinism,  
+> hash each n-gram in the document and take the smallest hash.
+> Now this says nothing, 
+> two documents can be not similar at all except one word that coincides to be the smallest one, 
+> to make this more robust, we use k seeds and collect the min hashes.
+> The more similarities we have, more MinHashes match.
+> We still haven’t solved the complexity problem, since we would still need to compare each document to all the others. 
+> To mitigate this, we use banding, we only compare documents that fall in the same band, the more similar the documents, 
+> the higher the probability of two adjacent MinHash's being similar (hence the local sensitivity).
+> Now finally, we proceed to compare the documents that pass all these *filters* by calculating the true Jaccard index.
