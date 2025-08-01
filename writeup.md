@@ -4,8 +4,8 @@
 
 ### Design Philosophy
 
-The goal of this pipeline is to isolate high-quality, English, non-redundant, and safe documents from raw Common Crawl, preserving only what’s worth training on. Each filter is modular, well-logged, and reversible, enabling future iterations and ablations.
-
+The goal of this pipeline is to isolate high-quality, English, non-redundant, and safe documents from raw Common Crawl, preserving only what’s worth training on.
+Each filter is modular, well-logged, and reversible, enabling future iterations and ablations.
 
 ### Inspecting CC:
 
