@@ -23,6 +23,10 @@ def parse_args():
 
     parser.add_argument("--overwrite", action="store_true", help="Overwrite output file if it exists")
 
+    parser.add_argument("--lang_model", type=str, help= "Path to language model classifier")
+    parser.add_argument("--nsfw_model", type=str, help= "Path to NSFW model classifier")
+    parser.add_argument("--hatespeech_model", type=str, help= "Path to hatespeech model classifier")
+
     parser.add_argument("--filter_lang", action="store_true", help="Filter records based on language")
     parser.add_argument("--lang", default="en", type=str, help="Language to filter for (e.g., 'en').")
     parser.add_argument("--confidence", default=0.90, type=float, help="Minimum confidence score to keep a document.")
@@ -37,9 +41,9 @@ if __name__ == "__main__":
 
     logging.info(f"Loading fastText models")
 
-    lang_model = fasttext.load_model("classifier_models/fasttext_language_ID.bin")
-    nsfw_model = fasttext.load_model("classifier_models/jigsaw_fasttext_bigrams_nsfw_final.bin")
-    hatespeech_model = fasttext.load_model("classifier_models/jigsaw_fasttext_bigrams_hatespeech_final.bin")
+    lang_model = fasttext.load_model(args.lang_model)
+    nsfw_model = fasttext.load_model(args.nsfw_model)
+    hatespeech_model = fasttext.load_model(args.hatespeech_model)
 
     input_file_path = Path(args.input_file)
     output_file = Path(args.output_file)
