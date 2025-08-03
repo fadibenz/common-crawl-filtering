@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument("--lang", default="en", type=str, help="Language to filter for (e.g., 'en').")
     parser.add_argument("--confidence", default=0.60, type=float, help="Minimum confidence score to keep a document.")
     parser.add_argument("--good_quality", action="store_true", help="Good quality documents")
-    parser.add_argument("--max_len", type=int, default=50000, help="Max5 length for each document")
+    parser.add_argument("--max_len", type=int, default=10000, help="Max5 length for each document")
 
     return parser.parse_args()
 
