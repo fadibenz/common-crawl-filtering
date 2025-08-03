@@ -13,3 +13,16 @@
 - Added different observations to writeup.
 - Implemented exact line deduplication using hashing. 
 - Implemented fuzzy deduplication using MinHash and LSH. 
+
+# 2025-07-31
+- Started scrapping for high-quality articles to use for fastText quality classifier.
+- Added script to construct data for fastText classifier.
+- Finished writeup sections on deduplication.
+
+# 2025-08-03:
+- Implemented Stage 1 for the pre-processing pipeline:
+  - Download Common-Crawl WARC/WET shards. 
+  - Extracts clean text, and keeps only English pages that pass quality, NSFW and hate-speech thresholds. 
+  - Implemented async download with aiohttp → temporary .gz file. 
+  - Per-file worker in ProcessPoolExecutor, parses WARC file and applies different filters.
+  - Writes each document in each shard as a different file to fit inside the deduplication script.
