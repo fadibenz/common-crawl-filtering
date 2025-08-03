@@ -34,5 +34,5 @@ def stream_one_file(file_url: str
                     ) -> WarcRecordType.response:
     with requests.get(file_url, stream = True) as r:
         with gzip.GzipFile(fileobj=r.raw) as gz:
-            for record in ArchiveIterator(gz, record_types=WarcRecordType.response)
+            for record in ArchiveIterator(gz, record_types=WarcRecordType.response):
                 yield record
