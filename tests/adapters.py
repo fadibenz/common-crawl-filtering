@@ -4,14 +4,14 @@ import os
 from typing import Any
 import fasttext
 
-from data_filtering.filtering_utilities.exact_line_deduplication import exact_line_deduplication
+from data_filtering.deduplication.exact_line_deduplication import exact_line_deduplication
 from data_filtering.filtering_utilities.extract_text import extract_text
 from data_filtering.filtering_utilities.gopher_quality_filters import gopher_quality_filters
 from data_filtering.filtering_utilities.harmful_content import classify_harmful_content
 from data_filtering.filtering_utilities.language_identification import language_identification
 from data_filtering.filtering_utilities.mask_pii import mask_emails, mask_phone_numbers, mask_ip_address
-from data_filtering.filtering_utilities.minhash_deduplication import minhash_deduplication
-
+from data_filtering.deduplication.minhash_deduplication import minhash_deduplication
+from data_filtering.deduplication.exact_line_deduplication_parallel import exact_line_dedup_parallel
 
 def run_extract_text_from_html_bytes(html_bytes: bytes) -> str | None:
     return extract_text(html_bytes)
@@ -49,7 +49,7 @@ def run_gopher_quality_filter(text: str) -> bool:
 def run_exact_line_deduplication(
     input_files: list[os.PathLike], output_directory: os.PathLike
 ):
-    return exact_line_deduplication(input_files, output_directory)
+    return exact_line_dedup_parallel(input_files, output_directory)
 
 
 def run_minhash_deduplication(
