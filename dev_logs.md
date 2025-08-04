@@ -26,3 +26,9 @@
   - Implemented async download with aiohttp → temporary .gz file. 
   - Per-file worker in ProcessPoolExecutor, parses WARC file and applies different filters.
   - Writes each document in each shard as a different file to fit inside the deduplication script.
+
+# 2025-08-04:
+- Started implementing stage 2 of the pre-processing pipeline.
+- Implemented parallel exact line deduplication with ProcessPoolExecutor and sqlite3 extension to allow for a scalable 
+solution.
+- Implemented parallel minhash fuzzy deduplication, using the same tricks as before and with robust integration of sqlite3.
