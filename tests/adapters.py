@@ -5,6 +5,7 @@ from typing import Any
 import fasttext
 
 from data_filtering.deduplication.exact_line_deduplication import exact_line_deduplication
+from data_filtering.deduplication.minhash_deduplication_parallel import minhash_deduplication_parallel
 from data_filtering.filtering_utilities.extract_text import extract_text
 from data_filtering.filtering_utilities.gopher_quality_filters import gopher_quality_filters
 from data_filtering.filtering_utilities.harmful_content import classify_harmful_content
@@ -60,4 +61,4 @@ def run_minhash_deduplication(
     jaccard_threshold: float,
     output_directory: os.PathLike,
 ):
-    return minhash_deduplication(input_files, num_hashes, num_bands, ngrams, jaccard_threshold, output_directory)
+    return minhash_deduplication_parallel(input_files, num_hashes, num_bands, ngrams, jaccard_threshold, output_directory)
