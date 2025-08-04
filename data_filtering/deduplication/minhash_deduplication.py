@@ -1,29 +1,9 @@
 import itertools
-import random
 from collections import defaultdict
 from typing import Set, List, Tuple, Dict
-import mmh3
 import os
 from pathlib import Path
-from data_filtering.deduplication.utils import normalize
-
-def get_ngrams(text: str,
-               n: int) -> Set[str]:
-    normalized_text = normalize(text)
-    word_list = normalized_text.split(" ")
-    ngram_set = (set
-        (" ".join(word for word in word_list[i: i + n])
-         for i in range(len(word_list) - n + 1)
-    ))
-
-    return ngram_set
-
-def compute_minhash_signature(ngrams_set: Set[str], num_hashes: int) -> List[int]:
-    signature = []
-    for seed in range(num_hashes):
-        min_hash = min([mmh3.hash(ngram, seed) & 0xffffffff for ngram in ngrams_set])
-        signature.append(min_hash)
-    return signature
+from data_filtering.deduplication.utils import get_ngrams, compute_minhash_signature, build_clusters, compute_jaccard
 
 
 def lsh_candidates(signature_dict: Dict[str, List[int]],
@@ -45,51 +25,6 @@ def lsh_candidates(signature_dict: Dict[str, List[int]],
     }
 
     return candidate_pairs_set
-
-
-def compute_jaccard(pair: Tuple[str, str],
-                    num_grams:int) -> float:
-    path_1, path_2 = pair
-
-    with open(path_1, "r", encoding="utf-8") as f:
-        doc = f.read()
-    ngram_set_1 = get_ngrams(doc, num_grams)
-
-    with open(path_2, "r", encoding="utf-8") as f:
-        doc = f.read()
-    ngram_set_2 = get_ngrams(doc, num_grams)
-
-    jaccard_index = len(ngram_set_1 & ngram_set_2) / len(ngram_set_1 | ngram_set_2)
-
-    return jaccard_index
-
-
-def build_clusters(confirmed_pairs: Set[Tuple[str, str]]
-                   )-> List[str]:
-    graph: Dict[str, Set[str]] = defaultdict(set)
-
-    for pair in confirmed_pairs:
-        graph[pair[0]].add(pair[1])
-        graph[pair[1]].add(pair[0])
-
-    visited_nodes = set()
-    duplicate_list_random = []
-
-    def dfs(node: str, visited: Set[str], local_cluster: List[str]):
-        if node in visited:
-            return
-        visited.add(node)
-        local_cluster.append(node)
-        for neighbor in graph[node]:
-            dfs(neighbor, visited, local_cluster)
-
-    for node in graph.keys():
-        if node not in visited_nodes:
-            local_cluster = []
-            dfs(node, visited_nodes, local_cluster)
-            duplicate_list_random.append(random.choice(local_cluster))
-
-    return duplicate_list_random
 
 
 
