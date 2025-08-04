@@ -2,23 +2,10 @@ import itertools
 import random
 from collections import defaultdict
 from typing import Set, List, Tuple, Dict
-import unicodedata
-import string
-import re
 import mmh3
 import os
 from pathlib import Path
-
-
-def normalize(text:str) -> str:
-    text = text.lower()
-
-    text = unicodedata.normalize("NFD", text)
-    text = "".join(char for char in text if unicodedata.category(char) != "Mn")
-    text = text.translate(str.maketrans("", "", string.punctuation))
-    text = re.sub(r"\s+", " ", text).strip()
-
-    return text
+from data_filtering.deduplication.utils import normalize
 
 def get_ngrams(text: str,
                n: int) -> Set[str]:
