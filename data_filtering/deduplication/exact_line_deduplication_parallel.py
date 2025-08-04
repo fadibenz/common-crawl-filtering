@@ -56,12 +56,9 @@ def exact_line_dedup_parallel(list_paths: List[str] | list[os.PathLike],
     num_workers = num_workers or os.cpu_count() or 1
     with TemporaryDirectory(prefix="dedup_") as tmp_root:
         db_path = Path(tmp_root) / "freqs.db"
-        Path(tmp_root).mkdir(exist_ok=True, parents=True)
-
         conn = setup_db_connection(db_path)
         try:
             conn.execute("CREATE TABLE IF NOT EXISTS hash_cnt(hash TEXT PRIMARY KEY, cnt INTEGER)")
-            conn.execute("DELETE FROM hash_cnt")
             conn.execute("PRAGMA wal_checkpoint(FULL)")
         finally:
             conn.close()
