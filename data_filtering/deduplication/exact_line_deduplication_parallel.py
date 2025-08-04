@@ -1,5 +1,4 @@
 from typing import List
-import sqlite3
 from tempfile import TemporaryDirectory
 from pathlib import Path
 import hashlib
