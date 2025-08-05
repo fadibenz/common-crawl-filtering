@@ -14,6 +14,7 @@ def normalize(text:str) -> str:
 
     text = unicodedata.normalize("NFD", text)
     text = "".join(char for char in text if unicodedata.category(char) != "Mn")
+    text = "".join(ch for ch in text if not unicodedata.category(ch).startswith("C"))
     text = text.translate(str.maketrans("", "", string.punctuation))
     text = re.sub(r"\s+", " ", text).strip()
 

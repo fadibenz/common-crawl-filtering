@@ -1,8 +1,6 @@
 import nltk
 from nltk import word_tokenize
 
-nltk.download('punkt_tab')
-
 def gopher_quality_filters(text: str)-> bool:
     words = word_tokenize(text)
 
