@@ -1,3 +1,4 @@
+import logging
 from typing import List
 from tempfile import TemporaryDirectory
 from pathlib import Path
@@ -56,6 +57,7 @@ def exact_line_dedup_parallel(list_paths: List[str] | list[os.PathLike],
     with TemporaryDirectory(prefix="dedup_") as tmp_root:
         db_path = Path(tmp_root) / "freqs.db"
         conn = setup_db_connection(db_path)
+
         try:
             conn.execute("CREATE TABLE IF NOT EXISTS hash_cnt(hash TEXT PRIMARY KEY, cnt INTEGER)")
             conn.execute("PRAGMA wal_checkpoint(FULL)")
@@ -69,7 +71,7 @@ def exact_line_dedup_parallel(list_paths: List[str] | list[os.PathLike],
                 try:
                     fut.result()
                 except Exception as e:
-                    print(f"Worker for hash counting failed: {e!r}")
+                    logging.error(f"Worker for hash counting failed: {e!r}")
 
         Path(output_directory).mkdir(parents=True, exist_ok=True)
 
@@ -82,4 +84,4 @@ def exact_line_dedup_parallel(list_paths: List[str] | list[os.PathLike],
                 try:
                     fut.result()
                 except Exception as e:
-                    print(f"Worker for writing uniques failed: {e!r}")
+                    logging.error(f"Worker for writing uniques failed: {e!r}")
