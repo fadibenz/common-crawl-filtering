@@ -1,10 +1,8 @@
-import logging
-from data_filtering.utils import setup_logging
+import random, glob, logging
 from tempfile import TemporaryDirectory
 from pathlib import Path
-import random
-import glob
 
+from data_filtering.utils import setup_logging
 from data_filtering.deduplication.exact_line_deduplication_parallel import exact_line_dedup_parallel
 from data_filtering.deduplication.minhash_deduplication_parallel import minhash_deduplication_parallel
 from data_filtering.data_pipeline.stage_2.config import parse_args
@@ -24,9 +22,11 @@ if __name__ == "__main__":
     with TemporaryDirectory(prefix="dedup_") as tmp_root:
         tmp_exact_output = Path(tmp_root) / "exact_line"
 
-        logging.info("Starting exact line deduplication...")
+        logging.info("Starting deduplication pipeline...")
         logging.info(f"Processing {len(input_list_path_exact)} files")
         logging.info(f"Args: {vars(args)}")
+
+        logging.info(f"Started exact line deduplication")
 
         exact_line_dedup_parallel(
             input_list_path_exact,
@@ -40,7 +40,6 @@ if __name__ == "__main__":
                      f"retained {len(input_list_path_fuzzy)} files")
 
         logging.info("Starting fuzzy deduplication...")
-        logging.info(f"Args: {vars(args)}")
 
         minhash_deduplication_parallel(
             input_list_path_fuzzy,
@@ -51,8 +50,3 @@ if __name__ == "__main__":
             args.STAGE2_DIR,
             args.num_workers
         )
-
-        final_path_list = glob.glob(f"{args.STAGE2_DIR}/*.txt")
-
-        logging.info("Successfully finished exact line deduplication"
-                     f"retained files {len(final_path_list)}")

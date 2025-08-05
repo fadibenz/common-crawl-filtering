@@ -1,12 +1,10 @@
-import itertools
-import json
+import itertools, json, logging, gzip, os
+
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Set, List, Tuple
-import os
 from pathlib import Path
 from data_filtering.deduplication.utils import setup_db_connection, build_clusters, get_ngrams, compute_minhash_signature, compute_jaccard
 from tempfile import TemporaryDirectory
-import logging
 
 def lsh_candidates_sqlite(db_path,
                    num_bands:int
@@ -69,13 +67,6 @@ def confirm_pair(pair: Tuple[str, str], num_grams: int, threshold: float) -> Tup
         logging.warning(f"Failed pair {pair}: {e}")
         return False, pair
 
-def copy_to_output(path: str, output_dir: str):
-    try:
-        output_path = Path(output_dir) / Path(path).name
-        with open(path, "r", encoding="utf-8", errors="ignore") as f_in, open(output_path, "w", encoding="utf-8") as f_out:
-            f_out.write(f_in.read())
-    except Exception as e:
-        logging.warning(f"Failed to copy {path}: {e}")
 
 def insert_signatures(db_path, signatures_to_insert):
     conn = setup_db_connection(db_path)
@@ -161,16 +152,16 @@ def minhash_deduplication_parallel(list_paths: List[str] | list[os.PathLike],
 
     paths_to_write = list(non_duplicates) + duplicate_random
 
-    output_dir = Path(output_directory)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = Path(output_directory) / "pre_processed_training.txt.gz"
+    Path(output_directory).mkdir(parents=True, exist_ok=True)
 
-    with ProcessPoolExecutor(max_workers=num_workers) as exe:
-        futures = [
-            exe.submit(copy_to_output, path, output_directory)
-            for path in paths_to_write
-        ]
+    logging.info(f"Successfully finished fuzzy deduplication, retained {len(paths_to_write)} files")
+    logging.info(f"Writing retained files into {output_path}")
+
+    with gzip.open(output_path, "wt", encoding="utf-8") as f_out:
         try:
-            for f in as_completed(futures):
-                f.result()
+            for path in paths_to_write:
+                with open(path, "r", encoding="utf-8", errors="ignore") as f_in:
+                    f_out.write(f_in.read() + "\n")
         except Exception as e:
-            logging.error(f"Worker for copying files to output failed: {e!r}")
+            logging.warning(f"Failed to copy file {path}: {e}")
