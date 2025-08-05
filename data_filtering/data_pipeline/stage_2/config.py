@@ -1,12 +1,24 @@
 import argparse
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Pre-processing of CC files using Asyncio")
+
+    parser.add_argument("--STAGE1_DIR",
+                        required=True,
+                        type=str,
+                        help="Path to list of paths directory")
 
     parser.add_argument("--STAGE2_DIR",
                         required=True,
                         type=str,
                         help="Stage 2 output directory")
+
+    parser.add_argument("--num_workers",
+                        type=int,
+                        default=16,
+                        help="Num of workers for process loop")
+
     parser.add_argument("--num_hashes",
                         type=int,
                         help="Number of hashes to use in MinHash")
