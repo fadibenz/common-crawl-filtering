@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 from pathlib import Path
 import hashlib
 import os
+from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from data_filtering.deduplication.utils import setup_db_connection
 
@@ -66,7 +67,9 @@ def exact_line_dedup_parallel(list_paths: List[str] | list[os.PathLike],
         with ProcessPoolExecutor(max_workers=num_workers) as exe:
             futures = [exe.submit(local_hashes_counter, path, db_path)
                        for path in list_paths]
-            for fut in as_completed(futures):
+            for fut in tqdm(as_completed(futures),
+                            total=len(futures),
+                            desc="Hashing line.."):
                 try:
                     fut.result()
                 except Exception as e:
@@ -79,7 +82,9 @@ def exact_line_dedup_parallel(list_paths: List[str] | list[os.PathLike],
                 exe.submit(write_uniques, path, output_directory, db_path)
                 for path in list_paths
             ]
-            for fut in as_completed(futures):
+            for fut in tqdm(as_completed(futures),
+                            total=len(futures),
+                            desc="Writing uniques..."):
                 try:
                     fut.result()
                 except Exception as e:

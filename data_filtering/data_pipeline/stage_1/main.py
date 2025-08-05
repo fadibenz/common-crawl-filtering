@@ -8,7 +8,7 @@ from argparse import Namespace
 import aiofiles
 import aiohttp
 from typing import List
-
+from tqdm import tqdm
 from data_filtering.data_pipeline.stage_1.config import parse_args
 from data_filtering.data_pipeline.stage_1.processing_one_file import filter_one_file, init_models
 from data_filtering.utils import setup_logging
@@ -42,9 +42,11 @@ async def process_one_file_async(session: aiohttp.ClientSession,
             args,
             output_dir,
         )
+
     except Exception as e:
         logging.error(f"Failed processing {url}: {e}")
         return None
+
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
@@ -70,10 +72,22 @@ async def main_orchestrator(urls: List[str],
 
     try:
         async with aiohttp.ClientSession(connector=conn) as session:
-            tasks = [process_one_file_async(session, u, args, loop, process_pool) for u in urls]
-            results = await asyncio.gather(*tasks)
-            manifests = [r for r in results if r is not None]
+            tasks = [
+                asyncio.create_task(process_one_file_async(session, u, args, loop, process_pool))
+                for u in urls
+            ]
+            manifests = []
+
+            for future in tqdm(
+                    asyncio.as_completed(tasks),
+                    total=len(tasks),
+                    desc="Processing files",
+            ):
+                manifest_path = await future
+                if manifest_path is not None:
+                    manifests.append(manifest_path)
             logging.info(f"All files processed. Total manifests created: {len(manifests)}")
+
     finally:
         logging.info("Shutting down process pool.")
         process_pool.shutdown()
@@ -85,5 +99,6 @@ if __name__ == "__main__":
 
     logging.info("Starting Stage 1 pre-processing...")
     logging.info(f"Args: {vars(args)}")
+
     urls = list_file_paths(args.num_urls, args.use_wet)
     asyncio.run(main_orchestrator(urls, args))

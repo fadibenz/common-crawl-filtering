@@ -1,5 +1,5 @@
 import itertools, json, logging, gzip, os
-
+from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Set, List, Tuple
 from pathlib import Path
@@ -113,7 +113,9 @@ def minhash_deduplication_parallel(list_paths: List[str] | list[os.PathLike],
             ]
             signatures_to_insert = []
 
-            for fut in as_completed(futures):
+            for fut in tqdm(as_completed(futures),
+                            total=len(futures),
+                            desc="Calculating MinHash signatures.."):
                 try:
                     signatures_to_insert.append((fut.result()))
 
@@ -136,7 +138,9 @@ def minhash_deduplication_parallel(list_paths: List[str] | list[os.PathLike],
             for pair in candidate_pairs_set
         ]
 
-        for fut in as_completed(futures):
+        for fut in tqdm(as_completed(futures),
+                        total=len(futures),
+                        desc="Confirming pairs..."):
             try:
                 ok, pair = fut.result()
                 if ok: confirmed_pairs.add(pair)
@@ -160,7 +164,10 @@ def minhash_deduplication_parallel(list_paths: List[str] | list[os.PathLike],
 
     with gzip.open(output_path, "wt", encoding="utf-8") as f_out:
         try:
-            for path in paths_to_write:
+            for path in tqdm(paths_to_write,
+                             total=len(paths_to_write),
+                             desc="Writing back to final pre-processed file"):
+
                 with open(path, "r", encoding="utf-8", errors="ignore") as f_in:
                     f_out.write(f_in.read().strip() + "\n")
         except Exception as e:
