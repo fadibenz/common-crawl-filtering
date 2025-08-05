@@ -5,6 +5,7 @@ from typing import Set, List, Tuple
 from pathlib import Path
 from data_filtering.deduplication.utils import setup_db_connection, build_clusters, get_ngrams, compute_minhash_signature, compute_jaccard
 from tempfile import TemporaryDirectory
+import re
 
 def lsh_candidates_sqlite(db_path,
                    num_bands:int
@@ -51,12 +52,13 @@ def lsh_candidates_sqlite(db_path,
 def generate_signature_sqlite(path: str | os.PathLike,
                               num_hashes: int,
                               num_grams: int):
-
+    signature = []
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
         text = f.read()
     ngram_set = get_ngrams(text, num_grams)
-    signature = compute_minhash_signature(ngram_set, num_hashes)
-    return str(path), json.dumps(signature)
+    if  ngram_set:
+        signature = compute_minhash_signature(ngram_set, num_hashes)
+    return str(path), signature
 
 
 def confirm_pair(pair: Tuple[str, str], num_grams: int, threshold: float) -> Tuple[bool, Tuple[str, str]]:
@@ -117,7 +119,10 @@ def minhash_deduplication_parallel(list_paths: List[str] | list[os.PathLike],
                             total=len(futures),
                             desc="Calculating MinHash signatures.."):
                 try:
-                    signatures_to_insert.append((fut.result()))
+                    path, signature = fut.result()
+                    if len(signature) == 0:
+                        continue
+                    signatures_to_insert.append((path, json.dumps(signature)))
 
                     if len(signatures_to_insert) >= batch_size:
                         insert_signatures(db_path, signatures_to_insert)
@@ -161,6 +166,7 @@ def minhash_deduplication_parallel(list_paths: List[str] | list[os.PathLike],
 
     logging.info(f"Successfully finished fuzzy deduplication, retained {len(paths_to_write)} files")
     logging.info(f"Writing retained files into {output_path}")
+    _whitespace_re = re.compile(r"\s+")
 
     with gzip.open(output_path, "wt", encoding="utf-8") as f_out:
         try:
@@ -169,6 +175,9 @@ def minhash_deduplication_parallel(list_paths: List[str] | list[os.PathLike],
                              desc="Writing back to final pre-processed file"):
 
                 with open(path, "r", encoding="utf-8", errors="ignore") as f_in:
-                    f_out.write(f_in.read().strip() + "\n")
+                        text = f_in.read()
+                        # one document per-line convention
+                        text = _whitespace_re.sub(" ", text).strip()
+                        f_out.write(text + "\n")
         except Exception as e:
             logging.warning(f"Failed to copy file {path}: {e}")
