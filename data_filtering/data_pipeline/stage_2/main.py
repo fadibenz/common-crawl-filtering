@@ -50,3 +50,5 @@ if __name__ == "__main__":
             args.STAGE2_DIR,
             args.num_workers
         )
+
+        logging.info("Finished deduplication pipeline")

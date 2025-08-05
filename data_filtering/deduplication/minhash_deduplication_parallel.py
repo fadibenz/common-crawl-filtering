@@ -162,6 +162,6 @@ def minhash_deduplication_parallel(list_paths: List[str] | list[os.PathLike],
         try:
             for path in paths_to_write:
                 with open(path, "r", encoding="utf-8", errors="ignore") as f_in:
-                    f_out.write(f_in.read() + "\n")
+                    f_out.write(f_in.read().strip() + "\n")
         except Exception as e:
             logging.warning(f"Failed to copy file {path}: {e}")

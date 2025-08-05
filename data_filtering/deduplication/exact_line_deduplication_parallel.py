@@ -15,7 +15,7 @@ def local_hashes_counter(path: str | os.PathLike,
     try:
         with open(path, "rb") as f:
             rows = [(
-                hashlib.sha256(line.rstrip(b"\r\n")).hexdigest(), 1)
+                hashlib.sha256(line.strip()).hexdigest(), 1)
                 for line in f
             ]
 
@@ -41,8 +41,7 @@ def write_uniques(path: str | os.PathLike,
     try:
         with open(output_path, "wb") as f_output, open(path, "rb") as f_input:
             for line in f_input:
-                h = hashlib.sha256(line.rstrip(b'\r\n')).hexdigest()
-
+                h = hashlib.sha256(line.strip()).hexdigest()
                 result = cur.execute("SELECT cnt from hash_cnt WHERE hash=?", (h,)).fetchone()
                 if result and result[0] == 1:
                     f_output.write(line)
