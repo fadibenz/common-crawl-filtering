@@ -15,12 +15,12 @@ def parse_args():
 
     parser.add_argument("--num_docs",
                         type=int,
-                        default=10,
+                        default=100,
                         help="Num of documents for each process at a time")
 
     parser.add_argument("--num_workers",
                         type=int,
-                        default=16,
+                        default=8,
                         help="Num of workers for process loop")
 
     parser.add_argument("--seed",
