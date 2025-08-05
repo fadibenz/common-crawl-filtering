@@ -1,20 +1,21 @@
-import gzip
 import logging
 import uuid
 from pathlib import Path
 
 import fasttext
 from fastwarc.warc import ArchiveIterator, WarcRecordType
+from fastwarc import GZipStream, FileStream
 from argparse import Namespace
 from typing import List
+
+from resiliparse.parse.encoding import bytes_to_str
 
 from data_filtering.filtering_utilities.harmful_content import classify_harmful_content
 from data_filtering.filtering_utilities.mask_pii import mask_pii
 from data_filtering.filtering_utilities.extract_text import extract_text
 from data_filtering.filtering_utilities.language_identification import language_identification
-from data_filtering.filtering_utilities.normalizing_text import normalize_whitespace
 from data_filtering.filtering_utilities.gopher_quality_filters import gopher_quality_filters
-
+from data_filtering.filtering_utilities.normalizing_text import normalize_whitespace
 
 lang_m: fasttext.FastText = None
 nsfw_m: fasttext.FastText = None
@@ -24,7 +25,15 @@ def init_models(lang_path: str | Path,
                 nsfw_path: str | Path,
                 hate_path:str | Path ):
     global lang_m, nsfw_m, hate_m
-    logging.info(f"Loading models in process {uuid.uuid4().hex[:6]}...")
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(process)d] %(levelname)s %(message)s",
+        handlers=[logging.StreamHandler()]
+    )
+
+    logging.info(f"Loading models...")
+
     lang_m = fasttext.load_model(lang_path)
     nsfw_m = fasttext.load_model(nsfw_path)
     hate_m = fasttext.load_model(hate_path)
@@ -35,18 +44,23 @@ def filter_one_file(compressed_file_path: str,
     manifest = []
     total_records = 0
     kept_records = 0
-    with gzip.open(compressed_file_path, "rt", encoding="utf-8", errors="replace") as stream:
-        for record in ArchiveIterator(stream, record_types=WarcRecordType.response):
+    stream = GZipStream(FileStream(str(compressed_file_path), "rb"))
+    record_type = WarcRecordType.response if not args.use_wet else WarcRecordType.conversion
+
+    for record in ArchiveIterator(stream, record_types=record_type):
             total_records += 1
 
-            if record.http_content_type and "text/html" not in record.http_content_type:
-                continue
+            if not args.use_wet:
+                if record.http_content_type and "text/html" not in record.http_content_type:
+                    continue
 
             try:
                 record_bytes = record.reader.read()
-                extracted_text = extract_text(record_bytes)
 
-                extracted_text = normalize_whitespace(extracted_text)
+                if not args.use_wet:
+                    extracted_text = extract_text(record_bytes)
+                else:
+                    extracted_text= bytes_to_str(record_bytes)
 
                 if not extracted_text.strip():
                     continue
@@ -71,15 +85,17 @@ def filter_one_file(compressed_file_path: str,
 
                 # PII masking
                 masked_extracted_text, _ = mask_pii(extracted_text)
-
+                normalized_text = normalize_whitespace(masked_extracted_text)
+                if not normalized_text:
+                    continue
                 uid = uuid.uuid4().hex
                 doc_path = output_dir / f"{uid}.txt"
 
-                doc_path.write_text(masked_extracted_text, encoding="utf-8")
-                manifest.append(str(doc_path))
+                doc_path.write_text(normalized_text, encoding="utf-8")
+                manifest.append(str(f"{doc_path}"))
 
             except Exception as e:
                 logging.warning(f"Failed to process record #{total_records}: {e}")
 
-    logging.info(f"Finished one file. Processed: {total_records}, Kept: {kept_records} ({kept_records / total_records:.2%})")
+    logging.info(f"Finished one file. Processed: {total_records}, Kept: {kept_records} ({kept_records / total_records if total_records != 0 else 1:.2%})")
     return manifest
