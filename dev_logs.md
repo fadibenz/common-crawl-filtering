@@ -32,3 +32,9 @@
 - Implemented parallel exact line deduplication with ProcessPoolExecutor and sqlite3 extension to allow for a scalable 
 solution.
 - Implemented parallel minhash fuzzy deduplication, using the same tricks as before and with robust integration of sqlite3.
+
+# 2025-08-05: 
+- Added final stage 2 implementation, incorporating exact line and fuzzy deduplication. 
+- Added stage 3 implementation with parallel tokenization.
+- Tested end-to-end the full data pipeline and fixed different errors.
+- Prepared bad quality data for fastText classifier (100k)
