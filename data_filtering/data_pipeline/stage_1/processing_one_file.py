@@ -10,6 +10,7 @@ from typing import List
 
 from resiliparse.parse.encoding import bytes_to_str
 
+from data_filtering.filtering_utilities.filter_lines import filter_lines
 from data_filtering.filtering_utilities.harmful_content import classify_harmful_content
 from data_filtering.filtering_utilities.mask_pii import mask_pii
 from data_filtering.filtering_utilities.extract_text import extract_text
@@ -86,12 +87,15 @@ def filter_one_file(compressed_file_path: str,
                 # PII masking
                 masked_extracted_text, _ = mask_pii(extracted_text)
                 normalized_text = normalize_whitespace(masked_extracted_text)
+
                 if not normalized_text:
                     continue
+
+                filtered_text = filter_lines(normalized_text, args.min_chars, set(args.blacklist_words))
                 uid = uuid.uuid4().hex
                 doc_path = output_dir / f"{uid}.txt"
 
-                doc_path.write_text(normalized_text, encoding="utf-8")
+                doc_path.write_text(filtered_text, encoding="utf-8")
                 manifest.append(str(f"{doc_path}"))
 
             except Exception as e:

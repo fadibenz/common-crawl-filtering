@@ -32,7 +32,10 @@ def parse_args():
                         help="Min non-nsfw score.")
     parser.add_argument("--hate_threshold", default=0.95, type=float,
                         help="Min non-hate score.")
-
+    parser.add_argument("--min_chars", type=int, default=40,
+                        help="Minimum number of charchters to keep a line")
+    parser.add_argument("--blacklist_words", nargs="+", type=str, default=["lorem ipsum"],
+                        help="List of blacklisted words, remove any line that contain any")
     parser.add_argument("--seed", default=2025, type=int,
                         help="Seed for reproducibility.")
 
