@@ -61,7 +61,7 @@ async def process_one_file_async(session: aiohttp.ClientSession,
 async def main_orchestrator(urls: List[str],
                             args: Namespace):
     conn = aiohttp.TCPConnector(limit=args.concurrency, limit_per_host=args.concurrency)
-
+    sem = asyncio.Semaphore(args.max_concurrent_downloads)
     process_pool = concurrent.futures.ProcessPoolExecutor(
         max_workers=args.num_workers,
         initializer=init_models,
@@ -69,11 +69,14 @@ async def main_orchestrator(urls: List[str],
     )
 
     loop = asyncio.get_running_loop()
+    async def task_with_semaphore(session, url):
+        async with sem:
+            return await process_one_file_async(session, url, args, loop, process_pool)
 
     try:
         async with aiohttp.ClientSession(connector=conn) as session:
             tasks = [
-                asyncio.create_task(process_one_file_async(session, u, args, loop, process_pool))
+                asyncio.create_task(task_with_semaphore(session, u))
                 for u in urls
             ]
             manifests = []
