@@ -1,4 +1,3 @@
-import nltk
 from nltk import word_tokenize
 
 def gopher_quality_filters(text: str)-> bool:
