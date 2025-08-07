@@ -3,7 +3,7 @@ from typing import List
 import requests
 import gzip
 from io import BytesIO
-BASE = "https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-18"
+BASE = "https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-21"
 
 def list_file_paths(max_files: int = 5000,
                     is_wet: bool = False, ) -> List[str]:
