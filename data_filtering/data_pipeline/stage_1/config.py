@@ -15,7 +15,7 @@ def parse_args():
                         help="Num of workers for process loop")
     parser.add_argument("--CHUNK_MB", type=int, default=1024,
                         help="Chunk size for downloading files in MB.")
-    parser.add_argument("--max_concurrent_downloads", type=int, default=4,
+    parser.add_argument("--max_concurrent_downloads", type=int, default=16,
                         help="Max simultaneous downloads (and temp files) at any time")
 
     parser.add_argument("--lang_model", type=str,
@@ -24,18 +24,24 @@ def parse_args():
                         default="classifier_models/jigsaw_fasttext_bigrams_nsfw_final.bin")
     parser.add_argument("--hatespeech_model", type=str,
                         default="classifier_models/jigsaw_fasttext_bigrams_hatespeech_final.bin")
+    parser.add_argument("--quality_model", type=str,
+                        default="classifier_models/quality_fasttext.ftz",
+                        help= "Path to fasttext quality classifier")
+
     parser.add_argument("--lang", default="en", type=str,
                         help="Language to filter for.")
-    parser.add_argument("--confidence", default=0.60, type=float,
+    parser.add_argument("--confidence", default=0.90, type=float,
                         help="Min language confidence score.")
     parser.add_argument("--nsfw_threshold", default=0.95, type=float,
                         help="Min non-nsfw score.")
     parser.add_argument("--hate_threshold", default=0.95, type=float,
                         help="Min non-hate score.")
-    parser.add_argument("--min_chars", type=int, default=40,
-                        help="Minimum number of charchters to keep a line")
-    parser.add_argument("--blacklist_words", nargs="+", type=str, default=["lorem ipsum"],
-                        help="List of blacklisted words, remove any line that contain any")
+    parser.add_argument("--quality_threshold", default=0.8, type=float,
+                        help="Min quality score.")
+
+    parser.add_argument("--min_words", type=int, default=6,
+                        help="Minimum number of words to keep a line")
+
     parser.add_argument("--seed", default=2025, type=int,
                         help="Seed for reproducibility.")
 

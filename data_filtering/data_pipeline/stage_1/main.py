@@ -65,7 +65,7 @@ async def main_orchestrator(urls: List[str],
     process_pool = concurrent.futures.ProcessPoolExecutor(
         max_workers=args.num_workers,
         initializer=init_models,
-        initargs=(args.lang_model, args.nsfw_model, args.hatespeech_model)
+        initargs=(args.lang_model, args.nsfw_model, args.hatespeech_model, args.quality_model)
     )
 
     loop = asyncio.get_running_loop()
