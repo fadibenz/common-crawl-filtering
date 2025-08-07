@@ -40,7 +40,8 @@ def run_classify_toxic_speech(text: str) -> tuple[Any, float]:
     return classify_harmful_content(text, model)
 
 def run_classify_quality(text: str) -> tuple[Any, float]:
-    raise NotImplementedError
+    model = fasttext.load_model("classifier_models/quality_fasttext.ftz")
+    return classify_harmful_content(text, model)
 
 
 def run_gopher_quality_filter(text: str) -> bool:
