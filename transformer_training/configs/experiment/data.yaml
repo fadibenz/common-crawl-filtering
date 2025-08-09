@@ -1,10 +1,10 @@
 # @package _global_
 
 paths:
-  train_bin: /data/c-nband/a1-basics/owt_train_gpt2_tok.bin
-  valid_bin: /data/paloma/tokenized_paloma_c4_100_domains_validation.bin
+  train_bin: /kaggle/input/cc-training/cc_train_gpt2_tok.bin
+  valid_bin: /kaggle/input/validation-c4-tokenized/tokenized_validation_c4_100_20k.bin
   
-  model_output: output/your_data
+  model_output: /kaggle/working/gpt_2_cc
 
 training:
   wandb_entity:

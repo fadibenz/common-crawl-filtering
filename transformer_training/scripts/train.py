@@ -40,10 +40,10 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm, trange
 
 import wandb
-from cs336_basics.data import get_batch
-from cs336_basics.model import BasicsTransformerLM
-from cs336_basics.optimizer import get_cosine_lr
-from cs336_basics.train_config import Config, register_configs
+from transformer_training.transformer_implementation.data import get_batch
+from transformer_training.transformer_implementation.model import BasicsTransformerLM
+from transformer_training.transformer_implementation.optimizer import get_cosine_lr
+from transformer_training.transformer_implementation.train_config import Config, register_configs
 
 register_configs()
 
