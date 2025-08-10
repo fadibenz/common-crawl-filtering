@@ -38,3 +38,8 @@ solution.
 - Added stage 3 implementation with parallel tokenization.
 - Tested end-to-end the full data pipeline and fixed different errors.
 - Prepared bad quality data for fastText classifier (100k)
+
+# 2025-08-07:
+- Finished preparing data with my local machine and two other Colab instances (each 1000 WET file took ~10h).
+- Randomly sampled and tokenized validation data, 20k samples from C4 subsets.
+- Prepared training scripts, I will use Kaggle.
